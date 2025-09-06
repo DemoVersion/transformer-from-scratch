@@ -17,7 +17,7 @@ source $HOME/.local/bin/env
 #### Install dependencies
 After cloning the repository, install the dependencies like this
 ```bash
-uv sync
+uv sync --extra ml
 ```
 
 ## Usage
