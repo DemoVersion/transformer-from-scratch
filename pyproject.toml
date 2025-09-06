@@ -1,0 +1,21 @@
+[project]
+name = "former"
+version = "0.1"
+description = "Educational implementation of self attention"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+  { name = "Peter Bloem", email = "former@peterbloem.nl" },
+  { name = "Hesam Haddad", email = "noreply@demoversion.dev" }
+]
+dependencies = [
+  "torch",
+  "tqdm",
+  "numpy",
+  "torchtext",
+  "tensorboard",
+]
+
+[project.urls]
+Homepage = "http://www.peterbloem.nl/blog/transformers"
