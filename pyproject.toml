@@ -17,6 +17,7 @@ dependencies = [
   "tensorboard",
   "pyright>=1.1.405",
   "ruff>=0.12.12",
+  "isort>=5.13.2",
 ]
 
 [project.urls]

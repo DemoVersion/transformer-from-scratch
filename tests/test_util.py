@@ -1,6 +1,6 @@
 import unittest
-import torch
 
+import torch
 
 from former.util import slice_diag
 

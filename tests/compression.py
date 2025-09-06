@@ -1,15 +1,12 @@
-import torch
 import gzip
 
+import fire
+import torch
 import transformers as trf
+from torch.utils.tensorboard import SummaryWriter
 
 from former import util
 from former.util import compute_compression
-
-
-from torch.utils.tensorboard import SummaryWriter
-
-import fire
 
 
 def test_gpt2(

@@ -1,10 +1,10 @@
-from .util import mask_, d, slice_diag
+import math
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
-import math
+from .util import d, mask_, slice_diag
 
 
 class SelfAttention(nn.Module):

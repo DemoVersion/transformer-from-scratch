@@ -1,7 +1,6 @@
 import unittest
 
 
-
 class SATestCase(unittest.TestCase):
     pass
 

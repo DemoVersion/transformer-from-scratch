@@ -1,17 +1,15 @@
-import torch
-import os
-import time
-import math
-import tqdm
-import random
 import gzip
-
-import torch.nn.functional as F
-import torch.distributions as dist
-
-from torch.utils.tensorboard import SummaryWriter
+import math
+import os
+import random
+import time
 
 import numpy as np
+import torch
+import torch.distributions as dist
+import torch.nn.functional as F
+import tqdm
+from torch.utils.tensorboard import SummaryWriter
 
 
 def enwik8(path=None, n_train=int(90e6), n_valid=int(5e6), n_test=int(5e6)):

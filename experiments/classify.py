@@ -1,19 +1,17 @@
-import former
-from former import util
+import math
+from argparse import ArgumentParser
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+import tqdm
+from torch import nn
+from torch.utils.tensorboard import SummaryWriter
 
 # from torchtext import data, datasets, vocab
 from torchtext.legacy import data, datasets
 
-
-from argparse import ArgumentParser
-from torch.utils.tensorboard import SummaryWriter
-
-import tqdm
-import math
+import former
+from former import util
 
 # Used for converting between nats and bits
 LOG2E = math.log2(math.e)

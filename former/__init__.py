@@ -1,10 +1,9 @@
 from .modules import (
+    Attention,
     SelfAttention,
+    SelfAttentionNarrow,
+    SelfAttentionRelative,
     SelfAttentionWide,
     TransformerBlock,
-    SelfAttentionRelative,
-    SelfAttentionNarrow,
-    Attention,
 )
-
-from .transformers import GTransformer, CTransformer
+from .transformers import CTransformer, GTransformer

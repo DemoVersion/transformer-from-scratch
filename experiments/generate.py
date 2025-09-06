@@ -1,20 +1,17 @@
-from former import util, GTransformer
-
-from former.util import here, tic, toc
-
-import torch
-from torch import nn
-import torch.nn.functional as F
-import torch.distributions as dist
+import gzip
+import random
+from argparse import ArgumentParser
 
 import numpy as np
-
-from argparse import ArgumentParser
+import torch
+import torch.distributions as dist
+import torch.nn.functional as F
+import tqdm
+from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 
-import random
-import tqdm
-import gzip
+from former import GTransformer, util
+from former.util import here, tic, toc
 
 # NB, the enwik8 data contains tokens from 9 to 240, but well round up to the nearest
 # power of two.
