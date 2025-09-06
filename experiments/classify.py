@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import tqdm
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
-
 # from torchtext import data, datasets, vocab
 from torchtext.legacy import data, datasets
 

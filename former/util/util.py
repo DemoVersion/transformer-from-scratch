@@ -242,10 +242,10 @@ def toc():
         return time.time() - tics.pop()
 
 
-def slice_diag(matrix, l, dv=None):
+def slice_diag(matrix, length, dv=None):
     """
     Take a batch of attention matrices for relative position encodings and slice out the relevant attentions. These
-    are the length l sequences starting at the diagonal
+    are the length sequences starting at the diagonal
 
     :param matrix:
     :return:
@@ -255,7 +255,7 @@ def slice_diag(matrix, l, dv=None):
 
     h, w = matrix.size(-2), matrix.size(-1)
 
-    assert w == 2 * l - 1, f"(h, w)= {(h, w)}, l={l}"
+    assert w == 2 * length - 1, f"(h, w)= {(h, w)}, length={length}"
 
     rest = matrix.size()[:-2]
 
@@ -263,13 +263,13 @@ def slice_diag(matrix, l, dv=None):
     b, h, w = matrix.size()
 
     result = matrix.view(b, -1)
-    result = torch.cat([result, torch.zeros(b, l, device=dv)], dim=1)
-    assert result.size() == (b, 2 * l * l), f"result.size() {result.size()}"
+    result = torch.cat([result, torch.zeros(b, length, device=dv)], dim=1)
+    assert result.size() == (b, 2 * length * length), f"result.size() {result.size()}"
 
-    result = result.view(b, l, 2 * l)
-    result = result[:, :, :l]
+    result = result.view(b, length, 2 * length)
+    result = result[:, :, :length]
 
-    result = result.view(*rest, h, l)
+    result = result.view(*rest, h, length)
     return result
 
 
@@ -301,7 +301,7 @@ def compute_compression(
     spend on each byte (=ASCII character) of the raw data.
     """
 
-    bits, tot = 0.0, 0
+    bits = 0.0
     batch = []
     # Buffer, every time it fills up, we run it through the model
     # --- For the sake of speed we want to process the data in batches. For each token in the data, we make a
@@ -371,7 +371,7 @@ def compute_compression(
                     inputs = inputs.cuda()
                 output = model(inputs)
 
-            if type(output) != torch.Tensor:
+            if not isinstance(output, torch.Tensor):
                 output = torch.log_softmax(
                     output.logits, dim=2
                 )  # To make the method work for GPT2 models from Huggingface
@@ -426,7 +426,7 @@ def estimate_compression(
     spend on each byte (=ASCII character) of the raw data.
     """
 
-    bits, tot = 0.0, 0
+    bits = 0.0
     batch = []
 
     # indices of target characters in the data
@@ -491,7 +491,7 @@ def estimate_compression(
                 if model_produces_logits:
                     output = F.log_softmax(output, dim=-1)
 
-            if type(output) != torch.Tensor:
+            if not isinstance(output, torch.Tensor):
                 output = torch.log_softmax(
                     output.logits, dim=2
                 )  # To make the method work for GPT2 models from Huggingface

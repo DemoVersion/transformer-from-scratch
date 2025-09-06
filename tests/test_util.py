@@ -10,7 +10,7 @@ class MyTestCase(unittest.TestCase):
         m = torch.randint(high=20, size=(16, 24, 3, 5, 9))
 
         print(m[0, 0, 0])
-        print(slice_diag(m[0, 0, 0], l=5))
+        print(slice_diag(m[0, 0, 0], length=5))
 
 
 if __name__ == "__main__":

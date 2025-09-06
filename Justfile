@@ -8,4 +8,4 @@ apply_ruff:
 clean_code: apply_ruff apply_isort
 
 check_code:
-    uv run basedpyright . --level error
+    uv run pyright . --level error

@@ -516,7 +516,7 @@ class SelfAttentionRelative(nn.Module):
 
         self.pos = pos_embedding  # embedding layer
 
-        e, s, h = emb, emb // heads, heads
+        s, h = emb // heads, heads
         # - We will break the embedding into `heads` chunks and feed each to a different attention head
 
         self.tokeys = nn.Linear(emb, emb, bias=False)
@@ -581,14 +581,14 @@ class SelfAttentionRelative(nn.Module):
         dot_tp = torch.einsum(
             "bis, bjs -> bij", queries, keys_pos
         )  # -- token with position
-        dot_tp = slice_diag(dot_tp, l=t)
+        dot_tp = slice_diag(dot_tp, length=t)
         assert dot_tp.size() == (b * h, t, t), f"{dot_tp.size()}"
 
         dot_pt = torch.einsum("bis, bjs -> bij", parma, keys)  # -- position with token
         assert dot_pt.size() == (b * h, t, t), f"{dot_pt.size()}"
 
         dot_pp = torch.einsum("bis, bjs -> bij", parmb, keys_pos)  # -- pos with pos
-        dot_pp = slice_diag(dot_pp, l=t)
+        dot_pp = slice_diag(dot_pp, length=t)
         assert dot_pp.size() == (b * h, t, t), f"{dot_pp.size()}"
 
         dot = dot_tt + dot_tp + dot_pt + dot_pp
