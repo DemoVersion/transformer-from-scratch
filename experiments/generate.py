@@ -4,11 +4,12 @@ from argparse import ArgumentParser
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.distributions as dist
 import torch.nn.functional as F
-import tqdm
-from torch import nn
+import torch.optim
 from torch.utils.tensorboard import SummaryWriter
+import tqdm
 
 from former import GTransformer, util
 from former.util import here, tic, toc
@@ -47,8 +48,11 @@ def enwik8(path, n_train=int(90e6), n_valid=int(5e6), n_test=int(5e6)):
     :param n_test:
     :return:
     """
-    with gzip.open(path) if path.endswith(".gz") else open(path) as file:
-        X = np.frombuffer(file.read(n_train + n_valid + n_test), dtype=np.uint8)
+    with gzip.open(path, 'rb') if path.endswith(".gz") else open(path, 'rb') as file:
+        data = file.read(n_train + n_valid + n_test)
+        if isinstance(data, str):
+            raise RuntimeError("Expected bytes but got str - check file mode")
+        X = np.frombuffer(data, dtype=np.uint8)
         trX, vaX, teX = np.split(X, [n_train, n_train + n_valid])
         return torch.from_numpy(trX), torch.from_numpy(vaX), torch.from_numpy(teX)
 

@@ -1,8 +1,8 @@
 import math
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-from torch import nn
 
 from .util import d, mask_, slice_diag
 

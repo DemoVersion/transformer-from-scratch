@@ -6,10 +6,11 @@ import time
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.distributions as dist
 import torch.nn.functional as F
-import tqdm
 from torch.utils.tensorboard import SummaryWriter
+import tqdm
 
 
 def enwik8(path=None, n_train=int(90e6), n_valid=int(5e6), n_test=int(5e6)):
@@ -27,8 +28,8 @@ def enwik8(path=None, n_train=int(90e6), n_valid=int(5e6), n_test=int(5e6)):
     if path is None:
         path = here("data/enwik8.gz")
 
-    with gzip.open(path) if path.endswith(".gz") else open(path) as file:
-        X = np.fromstring(file.read(n_train + n_valid + n_test), dtype=np.uint8)
+    with gzip.open(path, 'rb') if path.endswith(".gz") else open(path, 'rb') as file:
+        X = np.frombuffer(file.read(n_train + n_valid + n_test), dtype=np.uint8)
         trX, vaX, teX = np.split(X, [n_train, n_train + n_valid])
         return torch.from_numpy(trX), torch.from_numpy(vaX), torch.from_numpy(teX)
 
@@ -284,7 +285,7 @@ def compute_compression(
     context,
     batch_size,
     verbose=False,
-    tbw: SummaryWriter = None,
+    tbw: SummaryWriter | None = None,
     tok=None,
     skip=0,
 ):
@@ -508,4 +509,6 @@ def estimate_compression(
             bits += -log2probs.sum()  # Add the bits for each character (the negative log_2 probabilties) to the running total
             batch, target_indices = [], []  # clear the buffer
 
-    return bits.item() / nsamples  # total nr of bits used
+    if isinstance(bits, torch.Tensor):
+        return bits.item() / nsamples  # total nr of bits used
+    return bits / nsamples  # total nr of bits used

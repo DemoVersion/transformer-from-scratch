@@ -10,15 +10,22 @@ authors = [
   { name = "Hesam Haddad", email = "noreply@demoversion.dev" }
 ]
 dependencies = [
-  "torch",
   "tqdm",
   "numpy",
-  "torchtext",
-  "tensorboard",
   "pyright>=1.1.405",
   "ruff>=0.12.12",
   "isort>=5.13.2",
+  "transformers>=4.46.3",
+  "fire>=0.7.1",
 ]
+
+[project.optional-dependencies]
+ml = [
+  "torch",
+  "torchtext",
+  "tensorboard",
+]
+typecheck = ["types-torch"]
 
 [project.urls]
 Homepage = "http://www.peterbloem.nl/blog/transformers"

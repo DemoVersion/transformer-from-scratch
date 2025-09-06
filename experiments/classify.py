@@ -2,12 +2,13 @@ import math
 from argparse import ArgumentParser
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-import tqdm
-from torch import nn
+import torch.optim
 from torch.utils.tensorboard import SummaryWriter
+import tqdm
 # from torchtext import data, datasets, vocab
-from torchtext.legacy import data, datasets
+from torchtext.legacy import data, datasets  # type: ignore
 
 import former
 from former import util
@@ -108,7 +109,7 @@ def go(arg):
 
         with torch.no_grad():
             model.train(False)
-            tot, cor = 0.0, 0.0
+            tot, cor, test_loss = 0.0, 0.0, 0.0
 
             for batch in test_iter:
                 input = batch.text[0]
@@ -116,14 +117,17 @@ def go(arg):
 
                 if input.size(1) > mx:
                     input = input[:, :mx]
-                out = model(input).argmax(dim=1)
+                out = model(input)
+                test_loss += float(F.nll_loss(out, label).item())
+                out = out.argmax(dim=1)
 
                 tot += float(input.size(0))
                 cor += float((label == out).sum().item())
 
             acc = cor / tot
+            test_loss = test_loss / len(test_iter)
             print(f"-- {'test' if arg.final else 'validation'} accuracy {acc:.3}")
-            tbw.add_scalar("classification/test-loss", float(loss.item()), e)
+            tbw.add_scalar("classification/test-loss", test_loss, e)
 
 
 if __name__ == "__main__":

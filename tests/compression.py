@@ -39,11 +39,11 @@ def test_gpt2(
     encoded_input = tokenizer(text, return_tensors="pt")["input_ids"][0]
 
     if torch.cuda.is_available():
-        model.cuda()
+        model = model.to('cuda')
 
     context = model.config.n_ctx if context is None else context
 
-    bits, numcharsr = compute_compression(
+    bits_per_byte = compute_compression(
         model,
         data=encoded_input,
         context=context,
@@ -54,9 +54,8 @@ def test_gpt2(
         skip=skip,
     )
 
-    print("total bits: ", bits)
-    print("bits per byte (1): ", bits / numcharsr)
-    print("bits per byte (2): ", bits / numchars)
+    print("bits per byte: ", bits_per_byte)
+    print("total characters: ", numchars)
 
 
 if __name__ == "__main__":

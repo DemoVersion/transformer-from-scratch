@@ -1,0 +1,6 @@
+# PyTorch distributions module stub file  
+from typing import Any
+
+class Categorical:
+    def __init__(self, probs: Any) -> None: ...
+    def sample(self) -> Any: ...
