@@ -17,6 +17,7 @@ dependencies = [
   "isort>=5.13.2",
   "transformers>=4.46.3",
   "fire>=0.7.1",
+  "datasets>=4.4.1",
 ]
 
 [project.optional-dependencies]
