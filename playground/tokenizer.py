@@ -67,7 +67,9 @@ def build_bpe_tokenizer(
     tokenizer.pre_tokenizer = Whitespace()
 
     trainer = BpeTrainer(
-        vocab_size=vocab_size, min_frequency=min_frequency, special_tokens=special_tokens
+        vocab_size=vocab_size,
+        min_frequency=min_frequency,
+        special_tokens=special_tokens,
     )
 
     return tokenizer, trainer
