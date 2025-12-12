@@ -62,13 +62,14 @@ def sample_batch(data, length, batch_size):
 
 
 def sample_sequence(
-    model, seed, max_context, length=600, temperature=0.5, verbose=False
+    model, seed, tokenizer, max_context, length=600, temperature=0.5, verbose=False
 ):
     """
     Sequentially samples a sequence from the model, token by token.
 
     :param model: The transformer model
     :param seed: The sequence to start with
+    :param tokenizer: The tokenizer for decoding tokens
     :param max_context: Maximum context length the model can handle
     :param length: The total number of characters to sample
     :param temperature: The sampling temperature
@@ -79,8 +80,8 @@ def sample_sequence(
 
     if verbose:  # Print the seed, surrounded by square brackets
         print("[", end="", flush=True)
-        for c in seed:
-            print(str(chr(c)), end="", flush=True)
+        seed_text = tokenizer.decode(seed.tolist())
+        print(seed_text, end="", flush=True)
         print("]", end="", flush=True)
 
     for _ in range(length):
@@ -94,12 +95,13 @@ def sample_sequence(
         c = sample(output[0, -1, :], temperature)
 
         if verbose:
-            print(str(chr(max(32, c))), end="", flush=True)
+            token_text = tokenizer.decode([c.item()])
+            print(token_text, end="", flush=True)
 
         sequence = torch.cat([sequence, c[None]], dim=0)
 
     print()
-    return seed
+    return sequence
 
 
 def train():
@@ -117,7 +119,7 @@ def train():
 
     # Train tokenizer from scratch and load the data
     print("Training tokenizer from scratch and loading tokenized dataset...")
-    data_train, data_val, data_test = prepare_tokenized_dataset(
+    data_train, data_val, data_test, tokenizer = prepare_tokenized_dataset(
         target_tokens=config.TARGET_TOKENS,
         tokenizer_path=config.TOKENIZER_PATH,
         split=config.DATASET_SPLIT,
@@ -215,6 +217,7 @@ def train():
                 sample_sequence(
                     model,
                     seed=seed,
+                    tokenizer=tokenizer,
                     max_context=config.CONTEXT,
                     verbose=True,
                     length=config.SAMPLE_LENGTH,

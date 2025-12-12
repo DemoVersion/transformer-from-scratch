@@ -32,6 +32,7 @@ from typing import Optional, Tuple
 
 import torch
 from datasets import load_dataset
+from tokenizers import Tokenizer
 
 from playground.tokenizer import (
     build_bpe_tokenizer,
@@ -136,7 +137,7 @@ def prepare_tokenized_dataset(
     tokenizer_vocab_size: int = 8000,
     tokenizer_training_docs: int = 10000,
     verbose: bool = True,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Tokenizer]:
     """
     Train a fresh tokenizer from scratch and tokenize C4 dataset.
 
@@ -155,7 +156,7 @@ def prepare_tokenized_dataset(
         verbose: Print progress information
 
     Returns:
-        Tuple of (train_tensor, val_tensor, test_tensor) containing token IDs
+        Tuple of (train_tensor, val_tensor, test_tensor, tokenizer) containing token IDs and the tokenizer
     """
     # Train a fresh tokenizer from scratch
     train_tokenizer_from_c4(
@@ -168,7 +169,7 @@ def prepare_tokenized_dataset(
     )
 
     # Now load and tokenize the dataset using the freshly trained tokenizer
-    return load_tokenized_dataset(
+    train_data, val_data, test_data = load_tokenized_dataset(
         target_tokens=target_tokens,
         tokenizer_path=tokenizer_path,
         split=split,
@@ -178,6 +179,11 @@ def prepare_tokenized_dataset(
         test_ratio=test_ratio,
         verbose=verbose,
     )
+
+    # Load the tokenizer to return it
+    tokenizer = load_tokenizer(tokenizer_path)
+
+    return train_data, val_data, test_data, tokenizer
 
 
 def load_tokenized_dataset(
