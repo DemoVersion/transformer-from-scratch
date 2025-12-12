@@ -14,7 +14,6 @@ dependencies = [
   "numpy",
   "pyright>=1.1.405",
   "ruff>=0.12.12",
-  "isort>=5.13.2",
   "transformers>=4.46.3",
   "fire>=0.7.1",
   "datasets>=4.4.1",
@@ -35,3 +34,12 @@ Homepage = "http://www.peterbloem.nl/blog/transformers"
 dev = [
     "ipykernel>=6.29.5",
 ]
+
+[tool.ruff.lint]
+select = [
+    "I",   # isort - import sorting
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+]
+ignore = ["E501"]  # Ignore line length violations

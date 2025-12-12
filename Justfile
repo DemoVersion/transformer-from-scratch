@@ -1,11 +1,8 @@
-apply_isort:
-    uv run isort .
-
 apply_ruff:
     uv run ruff format .
     uv run ruff check --fix .
 
-clean_code: apply_ruff apply_isort
+clean_code: apply_ruff
 
 check_code:
     uv run pyright . --level error

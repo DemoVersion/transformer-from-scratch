@@ -89,7 +89,7 @@ def load_tokenized_dataset(
     num_documents = 0
 
     for example in dataset:
-        text = example["text"]
+        text = example["text"]  # type: ignore[index]
 
         # Tokenize to get token IDs
         encoded = tokenizer.encode(text)
@@ -149,7 +149,7 @@ def save_tokenized_dataset(
     train_data: torch.Tensor,
     val_data: torch.Tensor,
     test_data: torch.Tensor,
-    save_path: str,
+    save_path: str | Path,
     metadata: Optional[dict] = None,
 ) -> None:
     """
@@ -185,7 +185,7 @@ def save_tokenized_dataset(
 
 
 def load_saved_tokenized_dataset(
-    load_path: str,
+    load_path: str | Path,
     verbose: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
