@@ -26,13 +26,158 @@ Usage:
 """
 
 import argparse
+import tempfile
 from pathlib import Path
 from typing import Optional, Tuple
 
 import torch
 from datasets import load_dataset
 
-from playground.tokenizer import load_tokenizer
+from playground.tokenizer import (
+    build_bpe_tokenizer,
+    load_tokenizer,
+    save_tokenizer,
+    train_tokenizer,
+)
+
+
+def train_tokenizer_from_c4(
+    tokenizer_path: str,
+    vocab_size: int = 8000,
+    num_training_docs: int = 10000,
+    split: str = "train",
+    cache_dir: Optional[str] = None,
+    verbose: bool = True,
+) -> None:
+    """
+    Train a BPE tokenizer from scratch on C4 dataset samples.
+
+    Args:
+        tokenizer_path: Path to save the trained tokenizer
+        vocab_size: Vocabulary size for the tokenizer
+        num_training_docs: Number of C4 documents to use for training
+        split: Dataset split to use ('train' or 'validation')
+        cache_dir: Custom cache directory for downloads
+        verbose: Print progress information
+    """
+    if verbose:
+        print(f"\n{'=' * 80}")
+        print("TRAINING TOKENIZER FROM SCRATCH")
+        print(f"{'=' * 80}")
+        print(f"Target vocab size: {vocab_size:,}")
+        print(f"Training documents: {num_training_docs:,}")
+        print(f"Streaming C4 realnewslike dataset (split: {split})...")
+
+    # Stream dataset and collect training texts
+    dataset = load_dataset(
+        "allenai/c4",
+        "realnewslike",
+        split=split,
+        streaming=True,
+        cache_dir=cache_dir,
+        trust_remote_code=True,
+    )
+
+    # Collect training texts
+    training_texts = []
+    for i, example in enumerate(dataset):
+        if i >= num_training_docs:
+            break
+        training_texts.append(example["text"])  # type: ignore[index]
+        if verbose and (i + 1) % 1000 == 0:
+            print(f"  Collected {i + 1:,} documents...")
+
+    if verbose:
+        print(f"\n✓ Collected {len(training_texts):,} documents")
+        print("Training BPE tokenizer...")
+
+    # Create temporary corpus directory (auto-deleted when context exits)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Write texts to temporary files
+        corpus_files = []
+        temp_path = Path(temp_dir)
+
+        for i, text in enumerate(training_texts):
+            file_path = temp_path / f"corpus_{i}.txt"
+            file_path.write_text(text)
+            corpus_files.append(file_path)
+
+        # Build and train tokenizer
+        tokenizer, trainer = build_bpe_tokenizer(
+            vocab_size=vocab_size,
+            min_frequency=1,
+            special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"],
+        )
+
+        train_tokenizer(tokenizer, trainer, corpus_files)
+
+        if verbose:
+            print("✓ Tokenizer trained successfully")
+            print(f"Saving tokenizer to {tokenizer_path}...")
+
+        # Save tokenizer
+        save_tokenizer(tokenizer, tokenizer_path)
+
+        if verbose:
+            actual_vocab_size = tokenizer.get_vocab_size()
+            print("✓ Tokenizer saved!")
+            print(f"  Actual vocab size: {actual_vocab_size:,}")
+            print(f"{'=' * 80}\n")
+
+
+def prepare_tokenized_dataset(
+    target_tokens: int = 10_000_000,
+    tokenizer_path: str = "playground/bpe-tokenizer",
+    split: str = "train",
+    cache_dir: Optional[str] = None,
+    train_ratio: float = 0.9,
+    val_ratio: float = 0.05,
+    test_ratio: float = 0.05,
+    tokenizer_vocab_size: int = 8000,
+    tokenizer_training_docs: int = 10000,
+    verbose: bool = True,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Train a fresh tokenizer from scratch and tokenize C4 dataset.
+
+    This function always trains a new BPE tokenizer before tokenizing the dataset.
+
+    Args:
+        target_tokens: Target number of tokens to load (default: 10M)
+        tokenizer_path: Path to save the trained BPE tokenizer
+        split: Dataset split to use ('train' or 'validation')
+        cache_dir: Custom cache directory for downloads
+        train_ratio: Ratio of data for training (default: 0.9)
+        val_ratio: Ratio of data for validation (default: 0.05)
+        test_ratio: Ratio of data for testing (default: 0.05)
+        tokenizer_vocab_size: Vocabulary size for tokenizer (default: 8000)
+        tokenizer_training_docs: Number of documents to train tokenizer on (default: 10000)
+        verbose: Print progress information
+
+    Returns:
+        Tuple of (train_tensor, val_tensor, test_tensor) containing token IDs
+    """
+    # Train a fresh tokenizer from scratch
+    train_tokenizer_from_c4(
+        tokenizer_path=tokenizer_path,
+        vocab_size=tokenizer_vocab_size,
+        num_training_docs=tokenizer_training_docs,
+        split=split,
+        cache_dir=cache_dir,
+        verbose=verbose,
+    )
+
+    # Now load and tokenize the dataset using the freshly trained tokenizer
+    return load_tokenized_dataset(
+        target_tokens=target_tokens,
+        tokenizer_path=tokenizer_path,
+        split=split,
+        cache_dir=cache_dir,
+        train_ratio=train_ratio,
+        val_ratio=val_ratio,
+        test_ratio=test_ratio,
+        verbose=verbose,
+    )
 
 
 def load_tokenized_dataset(

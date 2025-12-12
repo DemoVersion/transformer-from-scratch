@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 from former import GTransformer, util
 from former.util import tic, toc
 from playground import config
-from playground.dataset_loader import get_vocab_size, load_tokenized_dataset
+from playground.dataset_loader import get_vocab_size, prepare_tokenized_dataset
 
 
 def sample(lnprobs, temperature=1.0):
@@ -115,15 +115,17 @@ def train():
     # Initialize tensorboard logging
     tbw = SummaryWriter(log_dir=config.TENSORBOARD_DIR)
 
-    # Load the data
-    print("Loading tokenized dataset from streaming...")
-    data_train, data_val, data_test = load_tokenized_dataset(
+    # Train tokenizer from scratch and load the data
+    print("Training tokenizer from scratch and loading tokenized dataset...")
+    data_train, data_val, data_test = prepare_tokenized_dataset(
         target_tokens=config.TARGET_TOKENS,
         tokenizer_path=config.TOKENIZER_PATH,
         split=config.DATASET_SPLIT,
         train_ratio=config.DATASET_TRAIN_RATIO,
         val_ratio=config.DATASET_VAL_RATIO,
         test_ratio=config.DATASET_TEST_RATIO,
+        tokenizer_vocab_size=config.TOKENIZER_VOCAB_SIZE,
+        tokenizer_training_docs=config.TOKENIZER_TRAINING_DOCS,
         verbose=True,
     )
 
