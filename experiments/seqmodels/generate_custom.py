@@ -1,4 +1,4 @@
-"""Simplified text generation experiment with custom dataset support.
+"""Text generation experiment with GTransformer with custom dataset support.
 
 Based on experiments/generate.py but simplified with configuration constants.
 """
@@ -12,10 +12,13 @@ import torch.nn.functional as F
 import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
+from experiments.seqmodels import config
+from experiments.seqmodels.dataset_loader import (
+    get_vocab_size,
+    prepare_tokenized_dataset,
+)
 from former import GTransformer, util
 from former.util import tic, toc
-from playground import config
-from playground.dataset_loader import get_vocab_size, prepare_tokenized_dataset
 
 
 def sample(lnprobs, temperature=1.0):

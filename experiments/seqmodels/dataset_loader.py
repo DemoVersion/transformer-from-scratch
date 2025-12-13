@@ -34,7 +34,8 @@ import torch
 from datasets import load_dataset
 from tokenizers import Tokenizer
 
-from playground.tokenizer import (
+from experiments.seqmodels import config
+from experiments.seqmodels.tokenizer import (
     build_bpe_tokenizer,
     load_tokenizer,
     save_tokenizer,
@@ -47,17 +48,21 @@ def train_tokenizer_from_c4(
     vocab_size: int = 8000,
     num_training_docs: int = 10000,
     split: str = "train",
+    dataset_name: str = config.DATASET_NAME,
+    dataset_config: str = config.DATASET_CONFIG,
     cache_dir: Optional[str] = None,
     verbose: bool = True,
 ) -> None:
     """
-    Train a BPE tokenizer from scratch on C4 dataset samples.
+    Train a BPE tokenizer from scratch on dataset samples.
 
     Args:
         tokenizer_path: Path to save the trained tokenizer
         vocab_size: Vocabulary size for the tokenizer
-        num_training_docs: Number of C4 documents to use for training
+        num_training_docs: Number of documents to use for training
         split: Dataset split to use ('train' or 'validation')
+        dataset_name: HuggingFace dataset name (default: from config)
+        dataset_config: HuggingFace dataset config (default: from config)
         cache_dir: Custom cache directory for downloads
         verbose: Print progress information
     """
@@ -67,12 +72,12 @@ def train_tokenizer_from_c4(
         print(f"{'=' * 80}")
         print(f"Target vocab size: {vocab_size:,}")
         print(f"Training documents: {num_training_docs:,}")
-        print(f"Streaming C4 realnewslike dataset (split: {split})...")
+        print(f"Streaming {dataset_name}/{dataset_config} dataset (split: {split})...")
 
     # Stream dataset and collect training texts
     dataset = load_dataset(
-        "allenai/c4",
-        "realnewslike",
+        dataset_name,
+        dataset_config,
         split=split,
         streaming=True,
         cache_dir=cache_dir,
@@ -130,6 +135,8 @@ def prepare_tokenized_dataset(
     target_tokens: int = 10_000_000,
     tokenizer_path: str = "playground/bpe-tokenizer",
     split: str = "train",
+    dataset_name: str = config.DATASET_NAME,
+    dataset_config: str = config.DATASET_CONFIG,
     cache_dir: Optional[str] = None,
     train_ratio: float = 0.9,
     val_ratio: float = 0.05,
@@ -139,7 +146,7 @@ def prepare_tokenized_dataset(
     verbose: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Tokenizer]:
     """
-    Train a fresh tokenizer from scratch and tokenize C4 dataset.
+    Train a fresh tokenizer from scratch and tokenize dataset.
 
     This function always trains a new BPE tokenizer before tokenizing the dataset.
 
@@ -147,6 +154,8 @@ def prepare_tokenized_dataset(
         target_tokens: Target number of tokens to load (default: 10M)
         tokenizer_path: Path to save the trained BPE tokenizer
         split: Dataset split to use ('train' or 'validation')
+        dataset_name: HuggingFace dataset name (default: from config)
+        dataset_config: HuggingFace dataset config (default: from config)
         cache_dir: Custom cache directory for downloads
         train_ratio: Ratio of data for training (default: 0.9)
         val_ratio: Ratio of data for validation (default: 0.05)
@@ -164,6 +173,8 @@ def prepare_tokenized_dataset(
         vocab_size=tokenizer_vocab_size,
         num_training_docs=tokenizer_training_docs,
         split=split,
+        dataset_name=dataset_name,
+        dataset_config=dataset_config,
         cache_dir=cache_dir,
         verbose=verbose,
     )
@@ -173,6 +184,8 @@ def prepare_tokenized_dataset(
         target_tokens=target_tokens,
         tokenizer_path=tokenizer_path,
         split=split,
+        dataset_name=dataset_name,
+        dataset_config=dataset_config,
         cache_dir=cache_dir,
         train_ratio=train_ratio,
         val_ratio=val_ratio,
@@ -190,6 +203,8 @@ def load_tokenized_dataset(
     target_tokens: int = 10_000_000,
     tokenizer_path: str = "playground/bpe-tokenizer",
     split: str = "train",
+    dataset_name: str = config.DATASET_NAME,
+    dataset_config: str = config.DATASET_CONFIG,
     cache_dir: Optional[str] = None,
     train_ratio: float = 0.9,
     val_ratio: float = 0.05,
@@ -197,12 +212,14 @@ def load_tokenized_dataset(
     verbose: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
-    Load and tokenize C4 dataset, returning train/val/test splits as token ID tensors.
+    Load and tokenize dataset, returning train/val/test splits as token ID tensors.
 
     Args:
         target_tokens: Target number of tokens to load (default: 10M)
         tokenizer_path: Path to trained BPE tokenizer
         split: Dataset split to use ('train' or 'validation')
+        dataset_name: HuggingFace dataset name (default: from config)
+        dataset_config: HuggingFace dataset config (default: from config)
         cache_dir: Custom cache directory for downloads
         train_ratio: Ratio of data for training (default: 0.9)
         val_ratio: Ratio of data for validation (default: 0.05)
@@ -219,14 +236,14 @@ def load_tokenized_dataset(
 
     if verbose:
         print(f"Tokenizer loaded: vocab_size={vocab_size:,}")
-        print(f"Streaming C4 realnewslike dataset (split: {split})...")
+        print(f"Streaming {dataset_name}/{dataset_config} dataset (split: {split})...")
         print(f"Target tokens: {target_tokens:,}")
         print("\nDownloading and tokenizing documents...")
 
     # Load dataset in streaming mode
     dataset = load_dataset(
-        "allenai/c4",
-        "realnewslike",
+        dataset_name,
+        dataset_config,
         split=split,
         streaming=True,
         cache_dir=cache_dir,
