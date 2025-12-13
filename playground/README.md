@@ -8,4 +8,4 @@ Use this space to:
 - Create temporary test scripts
 - Store local data files for testing
 
-All contents of this folder are ignored by git.
+All contents of this folder should be removed before merging into main.
