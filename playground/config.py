@@ -5,7 +5,6 @@ EMBEDDING_SIZE = 128
 NUM_HEADS = 8
 DEPTH = 12
 CONTEXT = 256
-NUM_TOKENS = 256
 ATTENTION_TYPE = "default"  # Options: "default", "gpt2", "wide", "narrow", "relative"
 
 # Training hyperparameters
