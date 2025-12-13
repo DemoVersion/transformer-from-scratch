@@ -1,3 +1,7 @@
 **/runs/
 **/__pycache__/
 CLAUDE.md
+# playground/
+playground/bpe-tokenizer/
+playground/corpus/
+notebooks/

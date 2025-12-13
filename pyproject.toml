@@ -3,7 +3,7 @@ name = "former"
 version = "0.1"
 description = "Educational implementation of self attention"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12,<3.13"
 license = { text = "MIT" }
 authors = [
   { name = "Peter Bloem", email = "former@peterbloem.nl" },
@@ -14,9 +14,9 @@ dependencies = [
   "numpy",
   "pyright>=1.1.405",
   "ruff>=0.12.12",
-  "isort>=5.13.2",
   "transformers>=4.46.3",
   "fire>=0.7.1",
+  "datasets>=4.4.1",
 ]
 
 [project.optional-dependencies]
@@ -29,3 +29,17 @@ typecheck = ["types-torch"]
 
 [project.urls]
 Homepage = "http://www.peterbloem.nl/blog/transformers"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+]
+
+[tool.ruff.lint]
+select = [
+    "I",   # isort - import sorting
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+]
+ignore = ["E501"]  # Ignore line length violations

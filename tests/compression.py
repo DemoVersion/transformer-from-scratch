@@ -39,7 +39,7 @@ def test_gpt2(
     encoded_input = tokenizer(text, return_tensors="pt")["input_ids"][0]
 
     if torch.cuda.is_available():
-        model = model.to('cuda')
+        model = model.to("cuda")
 
     context = model.config.n_ctx if context is None else context
 

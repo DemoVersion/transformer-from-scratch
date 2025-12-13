@@ -5,8 +5,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim
-from torch.utils.tensorboard import SummaryWriter
 import tqdm
+from torch.utils.tensorboard import SummaryWriter
+
 # from torchtext import data, datasets, vocab
 from torchtext.legacy import data, datasets  # type: ignore
 

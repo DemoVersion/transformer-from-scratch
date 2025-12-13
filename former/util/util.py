@@ -6,11 +6,10 @@ import time
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.distributions as dist
 import torch.nn.functional as F
-from torch.utils.tensorboard import SummaryWriter
 import tqdm
+from torch.utils.tensorboard import SummaryWriter
 
 
 def enwik8(path=None, n_train=int(90e6), n_valid=int(5e6), n_test=int(5e6)):
@@ -28,7 +27,7 @@ def enwik8(path=None, n_train=int(90e6), n_valid=int(5e6), n_test=int(5e6)):
     if path is None:
         path = here("data/enwik8.gz")
 
-    with gzip.open(path, 'rb') if path.endswith(".gz") else open(path, 'rb') as file:
+    with gzip.open(path, "rb") if path.endswith(".gz") else open(path, "rb") as file:
         X = np.frombuffer(file.read(n_train + n_valid + n_test), dtype=np.uint8)
         trX, vaX, teX = np.split(X, [n_train, n_train + n_valid])
         return torch.from_numpy(trX), torch.from_numpy(vaX), torch.from_numpy(teX)
