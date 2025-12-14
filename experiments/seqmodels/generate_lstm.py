@@ -1,6 +1,6 @@
-"""Text generation experiment with GTransformer with custom dataset support.
+"""Text generation experiment with LSTM model with custom dataset support.
 
-Based on experiments/generate.py but simplified with configuration constants.
+Similar to generate_custom.py but using SimplifiedAWDLSTM instead of GTransformer.
 """
 
 import random
@@ -12,12 +12,15 @@ import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 from experiments.seqmodels import config
+from experiments.seqmodels.alternative_architectures.simplified_awd_lstm import (
+    SimplifiedAWDLSTM,
+)
 from experiments.seqmodels.dataset_loader import (
     get_vocab_size,
     prepare_tokenized_dataset,
 )
 from experiments.seqmodels.utils import sample_batch, sample_sequence
-from former import GTransformer, util
+from former import util
 from former.util import tic, toc
 
 
@@ -60,14 +63,13 @@ def train():
     print(f"Training data size: {data_train.size(0):,} tokens")
     print(f"Test data size: {data_test.size(0):,} tokens")
 
-    # Create the model
-    model = GTransformer(
-        emb=config.EMBEDDING_SIZE,
-        heads=config.NUM_HEADS,
-        depth=config.DEPTH,
-        seq_length=config.CONTEXT,
-        num_tokens=vocab_size,
-        attention_type=config.ATTENTION_TYPE,
+    # Create the Simplified AWD-LSTM model
+    model = SimplifiedAWDLSTM(
+        vocab_size=vocab_size,
+        embed_dim=config.EMBEDDING_SIZE,
+        hidden_dim=config.EMBEDDING_SIZE,  # Use same dimension for hidden state
+        num_layers=config.DEPTH,
+        dropout_rate=0.25,
     )
     if torch.cuda.is_available():
         model.cuda()
@@ -106,11 +108,11 @@ def train():
         loss = F.nll_loss(output.transpose(2, 1), target, reduction="mean")
 
         tbw.add_scalar(
-            "transformer/train-loss",
+            "lstm/train-loss",
             float(loss.item()) * util.LOG2E,
             i * config.BATCH_SIZE,
         )
-        tbw.add_scalar("transformer/time-forward", t, instances_seen)
+        tbw.add_scalar("lstm/time-forward", t, instances_seen)
 
         loss.backward()  # backward pass
 
@@ -157,7 +159,7 @@ def train():
 
                 print(f"epoch{i}: {bits_per_byte:.4} bits per byte")
                 tbw.add_scalar(
-                    "transformer/eval-loss",
+                    "lstm/eval-loss",
                     bits_per_byte,
                     i * config.BATCH_SIZE,
                 )
@@ -166,12 +168,11 @@ def train():
 
 
 if __name__ == "__main__":
-    print("Configuration:")
+    print("Configuration (LSTM):")
     print(f"  Embedding size: {config.EMBEDDING_SIZE}")
-    print(f"  Num heads: {config.NUM_HEADS}")
-    print(f"  Depth: {config.DEPTH}")
+    print(f"  Hidden dim: {config.EMBEDDING_SIZE}")
+    print(f"  Num layers: {config.DEPTH}")
     print(f"  Context: {config.CONTEXT}")
-    print(f"  Attention type: {config.ATTENTION_TYPE}")
     print(f"  Batch size: {config.BATCH_SIZE}")
     print(f"  Learning rate: {config.LEARNING_RATE}")
     print()
