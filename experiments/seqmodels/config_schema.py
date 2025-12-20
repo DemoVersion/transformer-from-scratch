@@ -84,6 +84,14 @@ class ExperimentConfig(BaseModel):
     tensorboard_dir: str = Field(
         default="./runs", description="TensorBoard log directory"
     )
+    checkpoint_dir: str = Field(
+        default="./transformer_checkpoints",
+        description="Base directory for model checkpoints",
+    )
+    save_every: int = Field(
+        default=0,
+        description="Save checkpoint every N batches (0 = only save final model)",
+    )
 
 
 class TransformerExperimentConfig(BaseModel):

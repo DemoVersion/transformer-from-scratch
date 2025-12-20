@@ -34,3 +34,5 @@ experiment:
   random_seed: 1
   final: false
   tensorboard_dir: ./runs
+  checkpoint_dir: ./transformer_checkpoints
+  save_every: 0

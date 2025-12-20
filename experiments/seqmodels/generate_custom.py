@@ -18,7 +18,12 @@ from experiments.seqmodels.dataset_loader import (
     get_vocab_size,
     prepare_tokenized_dataset,
 )
-from experiments.seqmodels.utils import sample_batch, sample_sequence
+from experiments.seqmodels.utils import (
+    create_checkpoint_dir,
+    sample_batch,
+    sample_sequence,
+    save_checkpoint,
+)
 from former import GTransformer, util
 from former.util import tic, toc
 
@@ -35,6 +40,10 @@ def train(config: TransformerExperimentConfig):
 
     # Initialize tensorboard logging
     tbw = SummaryWriter(log_dir=config.experiment.tensorboard_dir)
+
+    # Create checkpoint directory for this run
+    checkpoint_dir = create_checkpoint_dir(config.experiment.checkpoint_dir)
+    print(f"Checkpoint directory: {checkpoint_dir}")
 
     # Train tokenizer from scratch and load the data
     print("Training tokenizer from scratch and loading tokenized dataset...")
@@ -130,6 +139,21 @@ def train(config: TransformerExperimentConfig):
         opt.step()  # stochastic gradient descent step
         sch.step()  # update the learning rate
 
+        # Save periodic checkpoint if configured
+        if (
+            config.experiment.save_every > 0
+            and i != 0
+            and i % config.experiment.save_every == 0
+        ):
+            save_checkpoint(
+                model=model,
+                config=config,
+                checkpoint_dir=checkpoint_dir,
+                batch_idx=i,
+                tokenizer=tokenizer,
+                is_final=False,
+            )
+
         # Validate every TEST_EVERY steps
         if i != 0 and (
             i % config.evaluation.test_every == 0
@@ -173,6 +197,16 @@ def train(config: TransformerExperimentConfig):
                     bits_per_byte,
                     i * config.training.batch_size,
                 )
+
+    # Save final checkpoint
+    save_checkpoint(
+        model=model,
+        config=config,
+        checkpoint_dir=checkpoint_dir,
+        batch_idx=config.training.num_batches - 1,
+        tokenizer=tokenizer,
+        is_final=True,
+    )
 
     print("Training complete!")
 
