@@ -22,12 +22,40 @@ uv sync --extra ml
 
 ## Usage
 
-Run a classification experiment on the IMDb dataset:
+### Quick Test
+Run tests to verify installation:
+```bash
+uv run python -m unittest discover tests
+```
+
+### Running Experiments
+
+**Classification** (IMDb sentiment analysis):
 ```bash
 uv run python experiments/classify.py
 ```
 
-For other experiments, see the `experiments/` directory. Hyperparameters are passed as command line arguments. Use `--help` to see available options:
+**Text Generation** (enwik8, character-level):
 ```bash
-uv run python experiments/classify.py --help
+uv run python experiments/generate.py
 ```
+
+**Transformer with BPE** (C4 dataset):
+```bash
+# Quick test with small config
+uv run python -m experiments.seqmodels.generate_custom --config experiments/seqmodels/configs/transformer_test.yaml
+
+# Full training
+uv run python -m experiments.seqmodels.generate_custom --config experiments/seqmodels/configs/transformer.yaml
+```
+
+**LSTM with BPE** (C4 dataset):
+```bash
+# Quick test
+uv run python -m experiments.seqmodels.generate_lstm --config experiments/seqmodels/configs/lstm_test.yaml
+
+# Full training
+uv run python -m experiments.seqmodels.generate_lstm --config experiments/seqmodels/configs/lstm.yaml
+```
+
+Use `--help` to see available options for any script.

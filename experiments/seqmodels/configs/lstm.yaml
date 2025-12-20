@@ -1,0 +1,43 @@
+# Original AWD-LSTM paper (Merity et al. 2017) used:
+#   embedding_size: 400, hidden_size: 1150, num_layers: 3
+# This resulted in ~24M parameters on Penn Treebank.
+# Our configuration uses smaller dimensions for faster experimentation.
+
+model:
+  embedding_size: 128
+  hidden_size: 250
+  context: 256
+  num_layers: 3
+  dropout_rate: 0.25
+
+training:
+  batch_size: 32
+  learning_rate: 0.0001
+  lr_warmup: 5000
+  gradient_clipping: 1.0
+  num_batches: 10000
+
+evaluation:
+  test_every: 1500
+  test_subset: 100000
+  test_batchsize: 64
+  sample_length: 600
+
+dataset:
+  dataset_name: allenai/c4
+  dataset_config: realnewslike
+  dataset_split: train
+  tokenizer_path: playground/bpe-tokenizer
+  tokenizer_vocab_size: 8000
+  tokenizer_training_docs: 10000
+  target_tokens: 10000000
+  train_ratio: 0.9
+  val_ratio: 0.05
+  test_ratio: 0.05
+
+experiment:
+  random_seed: 1
+  final: false
+  tensorboard_dir: ./runs
+  checkpoint_dir: ./lstm_checkpoints
+  save_every: 0

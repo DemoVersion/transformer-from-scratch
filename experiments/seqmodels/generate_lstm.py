@@ -1,6 +1,6 @@
-"""Text generation experiment with GTransformer with custom dataset support.
+"""Text generation experiment with LSTM model with custom dataset support.
 
-Based on experiments/generate.py but simplified with configuration from YAML.
+Similar to generate_custom.py but using SimplifiedAWDLSTM instead of GTransformer.
 """
 
 import random
@@ -13,7 +13,10 @@ import torch.nn.functional as F
 import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
-from experiments.seqmodels.config_schema import TransformerExperimentConfig
+from experiments.seqmodels.alternative_architectures.simplified_awd_lstm import (
+    SimplifiedAWDLSTM,
+)
+from experiments.seqmodels.config_schema import LSTMExperimentConfig
 from experiments.seqmodels.dataset_loader import (
     get_vocab_size,
     prepare_tokenized_dataset,
@@ -24,11 +27,11 @@ from experiments.seqmodels.utils import (
     sample_sequence,
     save_checkpoint,
 )
-from former import GTransformer, util
+from former import util
 from former.util import tic, toc
 
 
-def train(config: TransformerExperimentConfig):
+def train(config: LSTMExperimentConfig):
     """Main training function."""
     # Set random seed
     if config.experiment.random_seed < 0:
@@ -64,14 +67,13 @@ def train(config: TransformerExperimentConfig):
     print(f"Training data size: {data_train.size(0):,} tokens")
     print(f"Test data size: {data_test.size(0):,} tokens")
 
-    # Create the model
-    model = GTransformer(
-        emb=config.model.embedding_size,
-        heads=config.model.num_heads,
-        depth=config.model.depth,
-        seq_length=config.model.context,
-        num_tokens=vocab_size,
-        attention_type=config.model.attention_type,
+    # Create the Simplified AWD-LSTM model
+    model = SimplifiedAWDLSTM(
+        vocab_size=vocab_size,
+        embed_dim=config.model.embedding_size,
+        hidden_dim=config.model.hidden_size,
+        num_layers=config.model.num_layers,
+        dropout_rate=config.model.dropout_rate,
     )
     if torch.cuda.is_available():
         model.cuda()
@@ -115,11 +117,11 @@ def train(config: TransformerExperimentConfig):
         loss = F.nll_loss(output.transpose(2, 1), target, reduction="mean")
 
         tbw.add_scalar(
-            "transformer/train-loss",
+            "lstm/train-loss",
             float(loss.item()) * util.LOG2E,
             i * config.training.batch_size,
         )
-        tbw.add_scalar("transformer/time-forward", t, instances_seen)
+        tbw.add_scalar("lstm/time-forward", t, instances_seen)
 
         loss.backward()  # backward pass
 
@@ -186,7 +188,7 @@ def train(config: TransformerExperimentConfig):
 
                 print(f"epoch{i}: {bits_per_byte:.4} bits per byte")
                 tbw.add_scalar(
-                    "transformer/eval-loss",
+                    "lstm/eval-loss",
                     bits_per_byte,
                     i * config.training.batch_size,
                 )
@@ -209,20 +211,20 @@ def train(config: TransformerExperimentConfig):
     "--config",
     "config_path",
     type=click.Path(exists=True, path_type=Path),
-    default=Path(__file__).parent / "configs" / "transformer.yaml",
+    default=Path(__file__).parent / "configs" / "lstm.yaml",
     help="Path to YAML configuration file",
 )
 def main(config_path: Path):
-    """Train a transformer model for text generation."""
-    config = TransformerExperimentConfig.from_yaml(config_path)
+    """Train an LSTM model for text generation."""
+    config = LSTMExperimentConfig.from_yaml(config_path)
 
     print(f"Loading configuration from: {config_path}")
-    print("\nModel Configuration:")
+    print("\nModel Configuration (LSTM):")
     print(f"  Embedding size: {config.model.embedding_size}")
-    print(f"  Num heads: {config.model.num_heads}")
-    print(f"  Depth: {config.model.depth}")
+    print(f"  Hidden dim: {config.model.embedding_size}")
+    print(f"  Num layers: {config.model.num_layers}")
     print(f"  Context: {config.model.context}")
-    print(f"  Attention type: {config.model.attention_type}")
+    print(f"  Dropout rate: {config.model.dropout_rate}")
     print("\nTraining Configuration:")
     print(f"  Batch size: {config.training.batch_size}")
     print(f"  Learning rate: {config.training.learning_rate}")
