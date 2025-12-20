@@ -82,12 +82,12 @@ def sample_sequence(
     sequence = seed.detach().clone()
 
     if verbose:  # Print the seed, surrounded by square brackets
-        print("\nToken-by-token generation (spaces added between tokens):")
+        print("\nToken-by-token generation:")
         print("[", end="", flush=True)
         for token_id in seed.tolist():
             token_text = tokenizer.decode([token_id])
-            print(token_text, end=" ", flush=True)
-        print("]", end=" ", flush=True)
+            print(token_text, end="", flush=True)
+        print("]", end="", flush=True)
 
     for _ in range(length):
         # Input is the tail end of the sampled sequence (as many tokens as the model can handle)
@@ -101,18 +101,12 @@ def sample_sequence(
 
         if verbose:
             token_text = tokenizer.decode([c.item()])
-            print(token_text, end=" ", flush=True)
+            print(token_text, end="", flush=True)
 
         sequence = torch.cat([sequence, c[None]], dim=0)
 
     if verbose:
-        # Print the properly decoded text
-        print("\n\n" + "=" * 80)
-        print("Properly decoded output:")
-        print("=" * 80)
-        full_text = tokenizer.decode(sequence.tolist())
-        print(full_text)
-        print("=" * 80)
+        print("\n")  # Add newline after generation
 
     return sequence
 

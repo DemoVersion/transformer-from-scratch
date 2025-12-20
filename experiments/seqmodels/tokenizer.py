@@ -3,9 +3,9 @@
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer, decoders
 from tokenizers.models import BPE
-from tokenizers.pre_tokenizers import Whitespace
+from tokenizers.pre_tokenizers import ByteLevel
 from tokenizers.trainers import BpeTrainer
 from transformers import PreTrainedTokenizerFast
 
@@ -64,7 +64,8 @@ def build_bpe_tokenizer(
         special_tokens = ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
 
     tokenizer = Tokenizer(BPE(unk_token=unk_token))
-    tokenizer.pre_tokenizer = Whitespace()
+    tokenizer.pre_tokenizer = ByteLevel(add_prefix_space=False)
+    tokenizer.decoder = decoders.ByteLevel()
 
     trainer = BpeTrainer(
         vocab_size=vocab_size,
