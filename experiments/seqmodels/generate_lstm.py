@@ -51,14 +51,7 @@ def train(config: LSTMExperimentConfig):
     # Train tokenizer from scratch and load the data
     print("Training tokenizer from scratch and loading tokenized dataset...")
     data_train, data_val, data_test, tokenizer = prepare_tokenized_dataset(
-        target_tokens=config.dataset.target_tokens,
-        tokenizer_path=config.dataset.tokenizer_path,
-        split=config.dataset.dataset_split,
-        train_ratio=config.dataset.train_ratio,
-        val_ratio=config.dataset.val_ratio,
-        test_ratio=config.dataset.test_ratio,
-        tokenizer_vocab_size=config.dataset.tokenizer_vocab_size,
-        tokenizer_training_docs=config.dataset.tokenizer_training_docs,
+        dataset_config=config.dataset,
         verbose=True,
     )
 

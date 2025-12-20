@@ -34,7 +34,7 @@ import torch
 from datasets import load_dataset
 from tokenizers import Tokenizer
 
-from experiments.seqmodels import config
+from experiments.seqmodels.config_schema import DatasetConfig
 from experiments.seqmodels.tokenizer import (
     build_bpe_tokenizer,
     load_tokenizer,
@@ -44,12 +44,7 @@ from experiments.seqmodels.tokenizer import (
 
 
 def train_tokenizer_from_c4(
-    tokenizer_path: str,
-    vocab_size: int = 8000,
-    num_training_docs: int = 10000,
-    split: str = "train",
-    dataset_name: str = config.DATASET_NAME,
-    dataset_config: str = config.DATASET_CONFIG,
+    dataset_config: DatasetConfig,
     cache_dir: Optional[str] = None,
     verbose: bool = True,
 ) -> None:
@@ -57,12 +52,7 @@ def train_tokenizer_from_c4(
     Train a BPE tokenizer from scratch on dataset samples.
 
     Args:
-        tokenizer_path: Path to save the trained tokenizer
-        vocab_size: Vocabulary size for the tokenizer
-        num_training_docs: Number of documents to use for training
-        split: Dataset split to use ('train' or 'validation')
-        dataset_name: HuggingFace dataset name (default: from config)
-        dataset_config: HuggingFace dataset config (default: from config)
+        dataset_config: Dataset configuration object containing all dataset parameters
         cache_dir: Custom cache directory for downloads
         verbose: Print progress information
     """
@@ -70,15 +60,15 @@ def train_tokenizer_from_c4(
         print(f"\n{'=' * 80}")
         print("TRAINING TOKENIZER FROM SCRATCH")
         print(f"{'=' * 80}")
-        print(f"Target vocab size: {vocab_size:,}")
-        print(f"Training documents: {num_training_docs:,}")
-        print(f"Streaming {dataset_name}/{dataset_config} dataset (split: {split})...")
+        print(f"Target vocab size: {dataset_config.tokenizer_vocab_size:,}")
+        print(f"Training documents: {dataset_config.tokenizer_training_docs:,}")
+        print(f"Streaming {dataset_config.dataset_name}/{dataset_config.dataset_config} dataset (split: {dataset_config.dataset_split})...")
 
     # Stream dataset and collect training texts
     dataset = load_dataset(
-        dataset_name,
-        dataset_config,
-        split=split,
+        dataset_config.dataset_name,
+        dataset_config.dataset_config,
+        split=dataset_config.dataset_split,
         streaming=True,
         cache_dir=cache_dir,
         trust_remote_code=True,
@@ -87,7 +77,7 @@ def train_tokenizer_from_c4(
     # Collect training texts
     training_texts = []
     for i, example in enumerate(dataset):
-        if i >= num_training_docs:
+        if i >= dataset_config.tokenizer_training_docs:
             break
         training_texts.append(example["text"])  # type: ignore[index]
         if verbose and (i + 1) % 1000 == 0:
@@ -110,7 +100,7 @@ def train_tokenizer_from_c4(
 
         # Build and train tokenizer
         tokenizer, trainer = build_bpe_tokenizer(
-            vocab_size=vocab_size,
+            vocab_size=dataset_config.tokenizer_vocab_size,
             min_frequency=1,
             special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"],
         )
@@ -119,10 +109,10 @@ def train_tokenizer_from_c4(
 
         if verbose:
             print("✓ Tokenizer trained successfully")
-            print(f"Saving tokenizer to {tokenizer_path}...")
+            print(f"Saving tokenizer to {dataset_config.tokenizer_path}...")
 
         # Save tokenizer
-        save_tokenizer(tokenizer, tokenizer_path)
+        save_tokenizer(tokenizer, dataset_config.tokenizer_path)
 
         if verbose:
             actual_vocab_size = tokenizer.get_vocab_size()
@@ -132,17 +122,8 @@ def train_tokenizer_from_c4(
 
 
 def prepare_tokenized_dataset(
-    target_tokens: int = 10_000_000,
-    tokenizer_path: str = "playground/bpe-tokenizer",
-    split: str = "train",
-    dataset_name: str = config.DATASET_NAME,
-    dataset_config: str = config.DATASET_CONFIG,
+    dataset_config: DatasetConfig,
     cache_dir: Optional[str] = None,
-    train_ratio: float = 0.9,
-    val_ratio: float = 0.05,
-    test_ratio: float = 0.05,
-    tokenizer_vocab_size: int = 8000,
-    tokenizer_training_docs: int = 10000,
     verbose: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Tokenizer]:
     """
@@ -151,17 +132,8 @@ def prepare_tokenized_dataset(
     This function always trains a new BPE tokenizer before tokenizing the dataset.
 
     Args:
-        target_tokens: Target number of tokens to load (default: 10M)
-        tokenizer_path: Path to save the trained BPE tokenizer
-        split: Dataset split to use ('train' or 'validation')
-        dataset_name: HuggingFace dataset name (default: from config)
-        dataset_config: HuggingFace dataset config (default: from config)
+        dataset_config: Dataset configuration object containing all dataset parameters
         cache_dir: Custom cache directory for downloads
-        train_ratio: Ratio of data for training (default: 0.9)
-        val_ratio: Ratio of data for validation (default: 0.05)
-        test_ratio: Ratio of data for testing (default: 0.05)
-        tokenizer_vocab_size: Vocabulary size for tokenizer (default: 8000)
-        tokenizer_training_docs: Number of documents to train tokenizer on (default: 10000)
         verbose: Print progress information
 
     Returns:
@@ -169,11 +141,6 @@ def prepare_tokenized_dataset(
     """
     # Train a fresh tokenizer from scratch
     train_tokenizer_from_c4(
-        tokenizer_path=tokenizer_path,
-        vocab_size=tokenizer_vocab_size,
-        num_training_docs=tokenizer_training_docs,
-        split=split,
-        dataset_name=dataset_name,
         dataset_config=dataset_config,
         cache_dir=cache_dir,
         verbose=verbose,
@@ -181,70 +148,49 @@ def prepare_tokenized_dataset(
 
     # Now load and tokenize the dataset using the freshly trained tokenizer
     train_data, val_data, test_data = load_tokenized_dataset(
-        target_tokens=target_tokens,
-        tokenizer_path=tokenizer_path,
-        split=split,
-        dataset_name=dataset_name,
         dataset_config=dataset_config,
         cache_dir=cache_dir,
-        train_ratio=train_ratio,
-        val_ratio=val_ratio,
-        test_ratio=test_ratio,
         verbose=verbose,
     )
 
     # Load the tokenizer to return it
-    tokenizer = load_tokenizer(tokenizer_path)
+    tokenizer = load_tokenizer(dataset_config.tokenizer_path)
 
     return train_data, val_data, test_data, tokenizer
 
 
 def load_tokenized_dataset(
-    target_tokens: int = 10_000_000,
-    tokenizer_path: str = "playground/bpe-tokenizer",
-    split: str = "train",
-    dataset_name: str = config.DATASET_NAME,
-    dataset_config: str = config.DATASET_CONFIG,
+    dataset_config: DatasetConfig,
     cache_dir: Optional[str] = None,
-    train_ratio: float = 0.9,
-    val_ratio: float = 0.05,
-    test_ratio: float = 0.05,
     verbose: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Load and tokenize dataset, returning train/val/test splits as token ID tensors.
 
     Args:
-        target_tokens: Target number of tokens to load (default: 10M)
-        tokenizer_path: Path to trained BPE tokenizer
-        split: Dataset split to use ('train' or 'validation')
-        dataset_name: HuggingFace dataset name (default: from config)
-        dataset_config: HuggingFace dataset config (default: from config)
+        dataset_config: Dataset configuration object containing all dataset parameters
         cache_dir: Custom cache directory for downloads
-        train_ratio: Ratio of data for training (default: 0.9)
-        val_ratio: Ratio of data for validation (default: 0.05)
-        test_ratio: Ratio of data for testing (default: 0.05)
         verbose: Print progress information
 
     Returns:
         Tuple of (train_tensor, val_tensor, test_tensor) containing token IDs
     """
     if verbose:
-        print(f"Loading tokenizer from {tokenizer_path}...")
-    tokenizer = load_tokenizer(tokenizer_path)
+        print(f"Loading tokenizer from {dataset_config.tokenizer_path}...")
+    tokenizer = load_tokenizer(dataset_config.tokenizer_path)
     vocab_size = tokenizer.get_vocab_size()
 
     if verbose:
         print(f"Tokenizer loaded: vocab_size={vocab_size:,}")
-        print(f"Streaming {dataset_name}/{dataset_config} dataset (split: {split})...")
-        print(f"Target tokens: {target_tokens:,}")
+        print(f"Streaming {dataset_config.dataset_name}/{dataset_config.dataset_config} dataset (split: {dataset_config.dataset_split})...")
+        print(f"Target tokens: {dataset_config.target_tokens:,}")
         print("\nDownloading and tokenizing documents...")
 
     # Load dataset in streaming mode
     dataset = load_dataset(
-        dataset_name,
-        dataset_config,
-        split=split,
+        dataset_config.dataset_name,
+        dataset_config.dataset_config,
+        split=dataset_config.dataset_split,
         streaming=True,
         cache_dir=cache_dir,
         trust_remote_code=True,
@@ -274,11 +220,11 @@ def load_tokenized_dataset(
         if verbose and num_documents % 100 == 0:
             print(
                 f"  Documents: {num_documents:,} | Tokens: {total_tokens:,} | "
-                f"Progress: {total_tokens / target_tokens * 100:.1f}%"
+                f"Progress: {total_tokens / dataset_config.target_tokens * 100:.1f}%"
             )
 
         # Stop if we've reached target
-        if total_tokens >= target_tokens:
+        if total_tokens >= dataset_config.target_tokens:
             if verbose:
                 print("\n✓ Target reached!")
             break
@@ -287,8 +233,8 @@ def load_tokenized_dataset(
     token_tensor = torch.tensor(all_token_ids, dtype=torch.long)
 
     # Split into train/val/test
-    n_train = int(len(token_tensor) * train_ratio)
-    n_val = int(len(token_tensor) * val_ratio)
+    n_train = int(len(token_tensor) * dataset_config.train_ratio)
+    n_val = int(len(token_tensor) * dataset_config.val_ratio)
 
     train_data = token_tensor[:n_train]
     val_data = token_tensor[n_train : n_train + n_val]
@@ -305,9 +251,9 @@ def load_tokenized_dataset(
         print(f"Vocabulary size: {vocab_size:,}")
         print(f"Tokens per character: {total_tokens / total_chars:.4f}")
         print("\nData splits:")
-        print(f"  Train: {len(train_data):,} tokens ({train_ratio * 100:.1f}%)")
-        print(f"  Val:   {len(val_data):,} tokens ({val_ratio * 100:.1f}%)")
-        print(f"  Test:  {len(test_data):,} tokens ({test_ratio * 100:.1f}%)")
+        print(f"  Train: {len(train_data):,} tokens ({dataset_config.train_ratio * 100:.1f}%)")
+        print(f"  Val:   {len(val_data):,} tokens ({dataset_config.val_ratio * 100:.1f}%)")
+        print(f"  Test:  {len(test_data):,} tokens ({dataset_config.test_ratio * 100:.1f}%)")
         print("=" * 80)
 
     return train_data, val_data, test_data
