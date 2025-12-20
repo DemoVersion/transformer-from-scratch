@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+from experiments.seqmodels.alternative_architectures.weight_drop import WeightDrop
+
 
 class SimplifiedAWDLSTM(nn.Module):
     """
@@ -34,8 +36,14 @@ class SimplifiedAWDLSTM(nn.Module):
 
         # Core LSTM: Use PyTorch's optimized block
         # Note: Set dropout=0.0 here, as we apply custom dropout manually
-        self.lstm = nn.LSTM(
-            embed_dim, hidden_dim, num_layers, dropout=0.0, batch_first=True
+        lstm = nn.LSTM(embed_dim, hidden_dim, num_layers, dropout=0.0, batch_first=True)
+
+        # Apply weight drop to recurrent weights for AWD-LSTM
+        self.lstm = WeightDrop(
+            lstm,
+            # List of all recurrent weight matrices for all layers
+            weights=[f"weight_hh_l{i}" for i in range(num_layers)],
+            dropout=dropout_rate,
         )
 
         # Final prediction head

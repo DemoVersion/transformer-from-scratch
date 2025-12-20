@@ -62,7 +62,9 @@ def train_tokenizer_from_c4(
         print(f"{'=' * 80}")
         print(f"Target vocab size: {dataset_config.tokenizer_vocab_size:,}")
         print(f"Training documents: {dataset_config.tokenizer_training_docs:,}")
-        print(f"Streaming {dataset_config.dataset_name}/{dataset_config.dataset_config} dataset (split: {dataset_config.dataset_split})...")
+        print(
+            f"Streaming {dataset_config.dataset_name}/{dataset_config.dataset_config} dataset (split: {dataset_config.dataset_split})..."
+        )
 
     # Stream dataset and collect training texts
     dataset = load_dataset(
@@ -182,7 +184,9 @@ def load_tokenized_dataset(
 
     if verbose:
         print(f"Tokenizer loaded: vocab_size={vocab_size:,}")
-        print(f"Streaming {dataset_config.dataset_name}/{dataset_config.dataset_config} dataset (split: {dataset_config.dataset_split})...")
+        print(
+            f"Streaming {dataset_config.dataset_name}/{dataset_config.dataset_config} dataset (split: {dataset_config.dataset_split})..."
+        )
         print(f"Target tokens: {dataset_config.target_tokens:,}")
         print("\nDownloading and tokenizing documents...")
 
@@ -251,9 +255,15 @@ def load_tokenized_dataset(
         print(f"Vocabulary size: {vocab_size:,}")
         print(f"Tokens per character: {total_tokens / total_chars:.4f}")
         print("\nData splits:")
-        print(f"  Train: {len(train_data):,} tokens ({dataset_config.train_ratio * 100:.1f}%)")
-        print(f"  Val:   {len(val_data):,} tokens ({dataset_config.val_ratio * 100:.1f}%)")
-        print(f"  Test:  {len(test_data):,} tokens ({dataset_config.test_ratio * 100:.1f}%)")
+        print(
+            f"  Train: {len(train_data):,} tokens ({dataset_config.train_ratio * 100:.1f}%)"
+        )
+        print(
+            f"  Val:   {len(val_data):,} tokens ({dataset_config.val_ratio * 100:.1f}%)"
+        )
+        print(
+            f"  Test:  {len(test_data):,} tokens ({dataset_config.test_ratio * 100:.1f}%)"
+        )
         print("=" * 80)
 
     return train_data, val_data, test_data
