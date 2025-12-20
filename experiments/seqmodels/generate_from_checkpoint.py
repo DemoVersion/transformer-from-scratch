@@ -15,6 +15,7 @@ Usage:
         --temperature 0.9
 """
 
+import click
 import torch
 
 from experiments.seqmodels.utils import load_checkpoint, sample_sequence
@@ -71,48 +72,54 @@ def generate_text_from_checkpoint(
     print("\nGeneration complete!")
 
 
-if __name__ == "__main__":
-    import argparse
+@click.command()
+@click.argument(
+    "checkpoint_dir",
+    type=str,
+)
+@click.option(
+    "--prompt",
+    type=str,
+    default="The quick brown fox",
+    help="Text prompt to start generation",
+)
+@click.option(
+    "--length",
+    type=int,
+    default=100,
+    help="Number of tokens to generate",
+)
+@click.option(
+    "--temperature",
+    type=float,
+    default=0.8,
+    help="Sampling temperature (higher = more random)",
+)
+@click.option(
+    "--checkpoint",
+    type=str,
+    default="final_model.pt",
+    help="Name of checkpoint file to load",
+)
+def main(
+    checkpoint_dir: str,
+    prompt: str,
+    length: int,
+    temperature: float,
+    checkpoint: str,
+):
+    """Generate text from a saved checkpoint.
 
-    parser = argparse.ArgumentParser(
-        description="Generate text from a saved checkpoint"
-    )
-    parser.add_argument(
-        "checkpoint_dir",
-        type=str,
-        help="Path to checkpoint directory (e.g., transformer_checkpoints/run_20231201_123456)",
-    )
-    parser.add_argument(
-        "--prompt",
-        type=str,
-        default="The quick brown fox",
-        help="Text prompt to start generation",
-    )
-    parser.add_argument(
-        "--length",
-        type=int,
-        default=100,
-        help="Number of tokens to generate",
-    )
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=0.8,
-        help="Sampling temperature (higher = more random)",
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=str,
-        default="final_model.pt",
-        help="Name of checkpoint file to load",
-    )
-
-    args = parser.parse_args()
-
+    CHECKPOINT_DIR: Path to checkpoint directory (e.g., transformer_checkpoints/run_20231201_123456)
+    """
     generate_text_from_checkpoint(
-        checkpoint_dir=args.checkpoint_dir,
-        prompt=args.prompt,
-        length=args.length,
-        temperature=args.temperature,
-        checkpoint_name=args.checkpoint,
+        checkpoint_dir=checkpoint_dir,
+        prompt=prompt,
+        length=length,
+        temperature=temperature,
+        checkpoint_name=checkpoint,
     )
+
+
+if __name__ == "__main__":
+    main()
