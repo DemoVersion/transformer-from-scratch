@@ -25,16 +25,20 @@ Usage:
     )
 """
 
-import argparse
 import tempfile
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
+import click
 import torch
 from datasets import load_dataset
 from tokenizers import Tokenizer
 
-from experiments.seqmodels.config_schema import DatasetConfig
+from experiments.seqmodels.config_schema import (
+    DatasetConfig,
+    LSTMExperimentConfig,
+    TransformerExperimentConfig,
+)
 from experiments.seqmodels.tokenizer import (
     build_bpe_tokenizer,
     load_tokenizer,
@@ -359,94 +363,91 @@ def get_vocab_size(tokenizer_path: str) -> int:
     return tokenizer.get_vocab_size()
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Load, tokenize, and save dataset for transformer training",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
-    )
-    parser.add_argument(
-        "--target_tokens",
-        type=int,
-        default=10_000_000,
-        help="Target number of tokens to load (default: 10M)",
-    )
-    parser.add_argument(
-        "--tokenizer",
-        type=str,
-        default="playground/bpe-tokenizer",
-        help="Path to BPE tokenizer directory",
-    )
-    parser.add_argument(
-        "--split",
-        type=str,
-        default="train",
-        choices=["train", "validation"],
-        help="Dataset split to use (default: train)",
-    )
-    parser.add_argument(
-        "--save_path",
-        type=str,
-        default="playground/data/c4_tokenized.pt",
-        help="Path to save the tokenized dataset",
-    )
-    parser.add_argument(
-        "--cache_dir",
-        type=str,
-        default=None,
-        help="Custom cache directory for downloads",
-    )
-    parser.add_argument(
-        "--train_ratio",
-        type=float,
-        default=0.9,
-        help="Ratio of data for training (default: 0.9)",
-    )
-    parser.add_argument(
-        "--val_ratio",
-        type=float,
-        default=0.05,
-        help="Ratio of data for validation (default: 0.05)",
-    )
-    parser.add_argument(
-        "--test_ratio",
-        type=float,
-        default=0.05,
-        help="Ratio of data for testing (default: 0.05)",
-    )
+@click.command()
+@click.option(
+    "--config",
+    type=click.Path(exists=True, path_type=Path),
+    required=True,
+    help="Path to YAML config file (transformer.yaml or lstm.yaml)",
+)
+@click.option(
+    "--save-path",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Path to save the tokenized dataset (default: uses checkpoint dir from config)",
+)
+@click.option(
+    "--cache-dir",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Custom cache directory for downloads",
+)
+def main(
+    config: Path,
+    save_path: Optional[Path],
+    cache_dir: Optional[Path],
+):
+    """Load, tokenize, and save dataset for model training.
 
-    args = parser.parse_args()
+    Accepts either transformer or LSTM config files and uses the dataset
+    configuration to load and tokenize the data.
+    """
+    # Try loading as transformer config first, then LSTM config
+    experiment_config: Union[TransformerExperimentConfig, LSTMExperimentConfig]
+    try:
+        experiment_config = TransformerExperimentConfig.from_yaml(config)
+        click.echo(f"Loaded Transformer config from {config}")
+    except Exception:
+        try:
+            experiment_config = LSTMExperimentConfig.from_yaml(config)
+            click.echo(f"Loaded LSTM config from {config}")
+        except Exception as e:
+            click.echo(f"Error: Could not load config from {config}: {e}", err=True)
+            raise click.Abort()
+
+    # Extract dataset config
+    dataset_config = experiment_config.dataset
+
+    # Determine save path
+    if save_path is None:
+        checkpoint_dir = Path(experiment_config.experiment.checkpoint_dir)
+        save_path = checkpoint_dir / "tokenized_dataset.pt"
+
+    click.echo("\nDataset configuration:")
+    click.echo(
+        f"  Dataset: {dataset_config.dataset_name}/{dataset_config.dataset_config}"
+    )
+    click.echo(f"  Target tokens: {dataset_config.target_tokens:,}")
+    click.echo(f"  Tokenizer path: {dataset_config.tokenizer_path}")
+    click.echo(f"  Save path: {save_path}")
 
     # Load and tokenize dataset
     train_data, val_data, test_data = load_tokenized_dataset(
-        target_tokens=args.target_tokens,
-        tokenizer_path=args.tokenizer,
-        split=args.split,
-        cache_dir=args.cache_dir,
-        train_ratio=args.train_ratio,
-        val_ratio=args.val_ratio,
-        test_ratio=args.test_ratio,
+        dataset_config=dataset_config,
+        cache_dir=str(cache_dir) if cache_dir else None,
         verbose=True,
     )
 
     # Save tokenized dataset
     metadata = {
-        "target_tokens": args.target_tokens,
+        "config_path": str(config),
+        "target_tokens": dataset_config.target_tokens,
         "actual_tokens": len(train_data) + len(val_data) + len(test_data),
-        "tokenizer_path": args.tokenizer,
-        "split": args.split,
+        "tokenizer_path": dataset_config.tokenizer_path,
+        "dataset_name": dataset_config.dataset_name,
+        "dataset_config": dataset_config.dataset_config,
     }
 
     save_tokenized_dataset(
         train_data,
         val_data,
         test_data,
-        save_path=args.save_path,
+        save_path=save_path,
         metadata=metadata,
     )
 
-    print("\n✓ Done! Tokenized dataset ready for training.")
-    print(f"  Total: {len(train_data) + len(val_data) + len(test_data):,} tokens")
+    click.echo("\n✓ Done! Tokenized dataset ready for training.")
+    click.echo(f"  Total: {len(train_data) + len(val_data) + len(test_data):,} tokens")
 
 
 if __name__ == "__main__":
