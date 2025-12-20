@@ -6,16 +6,16 @@ model:
   attention_type: default
 
 training:
-  batch_size: 32
-  learning_rate: 0.0001
-  lr_warmup: 5000
+  batch_size: 256
+  learning_rate: 0.0008
+  lr_warmup: 625
   gradient_clipping: 1.0
-  num_batches: 10000
+  num_batches: 1250
 
 evaluation:
-  test_every: 1500
+  test_every: 187
   test_subset: 100000
-  test_batchsize: 64
+  test_batchsize: 256
   sample_length: 600
 
 dataset:
