@@ -1,0 +1,41 @@
+# Fast test configuration for transformer - completes in a few minutes
+# Significantly reduced model size, dataset, and training iterations for quick testing
+
+model:
+  embedding_size: 64
+  context: 128
+  num_heads: 4
+  depth: 2
+  attention_type: default
+
+training:
+  batch_size: 16
+  learning_rate: 0.0003
+  lr_warmup: 1000
+  gradient_clipping: 1.0
+  num_batches: 200
+
+evaluation:
+  test_every: 50
+  test_subset: 10000
+  test_batchsize: 32
+  sample_length: 200
+
+dataset:
+  dataset_name: allenai/c4
+  dataset_config: realnewslike
+  dataset_split: train
+  tokenizer_path: playground/bpe-tokenizer-test
+  tokenizer_vocab_size: 2000
+  tokenizer_training_docs: 500
+  target_tokens: 50000
+  train_ratio: 0.9
+  val_ratio: 0.05
+  test_ratio: 0.05
+
+experiment:
+  random_seed: 1
+  final: false
+  tensorboard_dir: ./runs/test
+  checkpoint_dir: ./transformer_checkpoints_test
+  save_every: 0
