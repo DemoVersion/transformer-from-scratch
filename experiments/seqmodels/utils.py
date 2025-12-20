@@ -65,7 +65,7 @@ def sample_batch(data, length, batch_size):
 
 
 def sample_sequence(
-    model, seed, tokenizer, max_context, length=600, temperature=0.5, verbose=False
+    model, seed, tokenizer, max_context, length=600, temperature=0.5, verbose=False, log_file=None
 ):
     """
     Sequentially samples a sequence from the model, token by token.
@@ -77,6 +77,7 @@ def sample_sequence(
     :param length: The total number of characters to sample
     :param temperature: The sampling temperature
     :param verbose: If true, print the sampled sequence as it is sampled
+    :param log_file: Optional file handle to write output to
     :return: The sampled sequence, including the seed
     """
     sequence = seed.detach().clone()
@@ -84,10 +85,16 @@ def sample_sequence(
     if verbose:  # Print the seed, surrounded by square brackets
         print("\nToken-by-token generation:")
         print("[", end="", flush=True)
+        if log_file:
+            log_file.write("\nToken-by-token generation:\n[")
         for token_id in seed.tolist():
             token_text = tokenizer.decode([token_id])
             print(token_text, end="", flush=True)
+            if log_file:
+                log_file.write(token_text)
         print("]", end="", flush=True)
+        if log_file:
+            log_file.write("]")
 
     for _ in range(length):
         # Input is the tail end of the sampled sequence (as many tokens as the model can handle)
@@ -102,13 +109,44 @@ def sample_sequence(
         if verbose:
             token_text = tokenizer.decode([c.item()])
             print(token_text, end="", flush=True)
+            if log_file:
+                log_file.write(token_text)
 
         sequence = torch.cat([sequence, c[None]], dim=0)
 
     if verbose:
         print("\n")  # Add newline after generation
+        if log_file:
+            log_file.write("\n\n")
 
     return sequence
+
+
+def write_test_header(log_file, batch_idx: int):
+    """Write a clear header for a test batch to the log file.
+
+    Args:
+        log_file: File handle to write to
+        batch_idx: Current batch index
+    """
+    separator = "=" * 80
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_file.write(f"\n{separator}\n")
+    log_file.write(f"BATCH {batch_idx} | {timestamp}\n")
+    log_file.write(f"{separator}\n")
+
+
+def write_test_metrics(log_file, batch_idx: int, bits_per_byte: float):
+    """Write test metrics to the log file.
+
+    Args:
+        log_file: File handle to write to
+        batch_idx: Current batch index
+        bits_per_byte: Compression metric
+    """
+    log_file.write(f"\nBatch {batch_idx}: {bits_per_byte:.4f} bits per byte\n")
+    log_file.write("-" * 80 + "\n")
+    log_file.flush()  # Ensure output is written immediately
 
 
 def create_checkpoint_dir(base_dir: str) -> Path:

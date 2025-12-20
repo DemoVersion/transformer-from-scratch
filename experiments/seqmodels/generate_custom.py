@@ -23,6 +23,8 @@ from experiments.seqmodels.utils import (
     sample_batch,
     sample_sequence,
     save_checkpoint,
+    write_test_header,
+    write_test_metrics,
 )
 from former import GTransformer, util
 from former.util import tic, toc
@@ -44,6 +46,12 @@ def train(config: TransformerExperimentConfig):
     # Create checkpoint directory for this run
     checkpoint_dir = create_checkpoint_dir(config.experiment.checkpoint_dir)
     print(f"Checkpoint directory: {checkpoint_dir}")
+
+    # Open log file for test outputs
+    test_log_path = checkpoint_dir / "test_outputs.txt"
+    test_log_file = open(test_log_path, "a")
+    test_log_file.write(f"Test outputs log - Started at {checkpoint_dir.name}\n")
+    print(f"Test outputs will be logged to: {test_log_path}")
 
     # Train tokenizer from scratch and load the data
     print("Training tokenizer from scratch and loading tokenized dataset...")
@@ -153,6 +161,9 @@ def train(config: TransformerExperimentConfig):
             or i == config.training.num_batches - 1
         ):
             with torch.no_grad():
+                # Write test header to log file
+                write_test_header(test_log_file, i)
+
                 # Sample and print a random sequence
                 seedfr = random.randint(0, data_test.size(0) - config.model.context)
                 seed = data_test[seedfr : seedfr + config.model.context].to(torch.long)
@@ -167,6 +178,7 @@ def train(config: TransformerExperimentConfig):
                     max_context=config.model.context,
                     verbose=True,
                     length=config.evaluation.sample_length,
+                    log_file=test_log_file,
                 )
 
                 # Compute validation bits per byte
@@ -185,6 +197,10 @@ def train(config: TransformerExperimentConfig):
                 )
 
                 print(f"epoch{i}: {bits_per_byte:.4} bits per byte")
+
+                # Write metrics to log file
+                write_test_metrics(test_log_file, i, bits_per_byte)
+
                 tbw.add_scalar(
                     "transformer/eval-loss",
                     bits_per_byte,
@@ -200,6 +216,10 @@ def train(config: TransformerExperimentConfig):
         tokenizer=tokenizer,
         is_final=True,
     )
+
+    # Close test log file
+    test_log_file.close()
+    print(f"Test outputs saved to: {test_log_path}")
 
     print("Training complete!")
 
