@@ -65,7 +65,14 @@ def sample_batch(data, length, batch_size):
 
 
 def sample_sequence(
-    model, seed, tokenizer, max_context, length=600, temperature=0.5, verbose=False, log_file=None
+    model,
+    seed,
+    tokenizer,
+    max_context,
+    length=600,
+    temperature=0.5,
+    verbose=False,
+    log_file=None,
 ):
     """
     Sequentially samples a sequence from the model, token by token.

@@ -4,6 +4,13 @@
 set -e
 
 echo "================================"
+echo "Training Tokenizer"
+echo "================================"
+uv run python -m experiments.seqmodels.train_tokenizer --config experiments/seqmodels/configs/transformer.yaml --force
+
+echo ""
+echo "================================"
+echo "Tokenizer Training Complete!"
 echo "Starting Transformer Training"
 echo "================================"
 uv run python -m experiments.seqmodels.generate_custom --config experiments/seqmodels/configs/transformer.yaml

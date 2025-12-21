@@ -19,8 +19,9 @@ from experiments.seqmodels.alternative_architectures.simplified_awd_lstm import 
 from experiments.seqmodels.config_schema import LSTMExperimentConfig
 from experiments.seqmodels.dataset_loader import (
     get_vocab_size,
-    prepare_tokenized_dataset,
+    load_tokenized_dataset,
 )
+from experiments.seqmodels.tokenizer import load_tokenizer
 from experiments.seqmodels.utils import (
     create_checkpoint_dir,
     sample_batch,
@@ -56,12 +57,26 @@ def train(config: LSTMExperimentConfig):
     test_log_file.write(f"Test outputs log - Started at {checkpoint_dir.name}\n")
     print(f"Test outputs will be logged to: {test_log_path}")
 
-    # Train tokenizer from scratch and load the data
-    print("Training tokenizer from scratch and loading tokenized dataset...")
-    data_train, data_val, data_test, tokenizer = prepare_tokenized_dataset(
+    # Check if tokenizer exists
+    tokenizer_path = Path(config.dataset.tokenizer_path)
+    tokenizer_file = tokenizer_path / "tokenizer.json"
+
+    if not tokenizer_file.exists():
+        raise FileNotFoundError(
+            f"Tokenizer not found at {tokenizer_path}\n"
+            f"Train it first: uv run python -m experiments.seqmodels.train_tokenizer --config <config>"
+        )
+
+    # Load the data using pre-trained tokenizer
+    print(f"Using pre-trained tokenizer from: {tokenizer_path}")
+    print("Loading tokenized dataset...")
+    data_train, data_val, data_test = load_tokenized_dataset(
         dataset_config=config.dataset,
         verbose=True,
     )
+
+    # Load tokenizer for sampling/generation
+    tokenizer = load_tokenizer(config.dataset.tokenizer_path)
 
     vocab_size = get_vocab_size(config.dataset.tokenizer_path)
     print(f"Vocabulary size: {vocab_size:,}")

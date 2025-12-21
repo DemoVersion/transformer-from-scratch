@@ -24,7 +24,7 @@ dataset:
   dataset_split: train
   tokenizer_path: playground/bpe-tokenizer
   tokenizer_vocab_size: 8000
-  tokenizer_training_docs: 10000
+  tokenizer_training_docs: 200000
   target_tokens: 500000000
   train_ratio: 0.9
   val_ratio: 0.05
