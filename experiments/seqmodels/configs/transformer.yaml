@@ -4,6 +4,7 @@ model:
   num_heads: 8
   depth: 12
   attention_type: default
+  dropout_rate: 0.25
 
 training:
   batch_size: 256

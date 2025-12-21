@@ -22,6 +22,9 @@ class TransformerModelConfig(ModelConfig):
     attention_type: Literal["default", "gpt2", "wide", "narrow", "relative"] = Field(
         default="default", description="Type of attention mechanism"
     )
+    dropout_rate: float = Field(
+        default=0.0, description="Dropout rate for regularization"
+    )
 
 
 class LSTMModelConfig(ModelConfig):

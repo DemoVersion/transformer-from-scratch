@@ -162,7 +162,7 @@ def evaluate_models(
 
     _, _, data_test = load_tokenized_dataset(
         dataset_config=transformer_config.dataset,
-        verbose=False,
+        verbose=True,
     )
 
     print(f"Test data size: {data_test.size(0):,} tokens")

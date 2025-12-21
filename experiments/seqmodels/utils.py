@@ -264,6 +264,7 @@ def load_checkpoint(
             seq_length=config.model.context,
             num_tokens=vocab_size,
             attention_type=config.model.attention_type,
+            dropout=config.model.dropout_rate,
         )
     elif isinstance(config, LSTMExperimentConfig):
         model = SimplifiedAWDLSTM(

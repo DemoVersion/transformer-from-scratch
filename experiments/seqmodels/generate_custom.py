@@ -95,6 +95,7 @@ def train(config: TransformerExperimentConfig):
         seq_length=config.model.context,
         num_tokens=vocab_size,
         attention_type=config.model.attention_type,
+        dropout=config.model.dropout_rate,
     )
     if torch.cuda.is_available():
         model.cuda()
