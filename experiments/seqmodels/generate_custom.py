@@ -197,18 +197,14 @@ def train(config: TransformerExperimentConfig):
                 )
 
                 # Compute validation bits per byte
-                upto = (
-                    data_test.size(0)
-                    if i == config.training.num_batches - 1
-                    else config.evaluation.test_subset
-                )
-                data_sub = data_test[:upto]
+                data_sub = data_test[: config.evaluation.test_subset]
 
                 bits_per_byte = util.compute_compression(
                     model,
                     data_sub,
                     context=config.model.context,
                     batch_size=config.evaluation.test_batchsize,
+                    verbose=True,
                 )
 
                 print(f"epoch{i}: {bits_per_byte:.4} bits per byte")
