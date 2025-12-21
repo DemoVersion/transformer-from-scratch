@@ -11,16 +11,16 @@ model:
   dropout_rate: 0.25
 
 training:
-  batch_size: 32
-  learning_rate: 0.0001
-  lr_warmup: 5000
+  batch_size: 256
+  learning_rate: 0.0008
+  lr_warmup: 3125
   gradient_clipping: 1.0
-  num_batches: 10000
+  num_batches: 6250
 
 evaluation:
-  test_every: 1500
+  test_every: 500
   test_subset: 100000
-  test_batchsize: 64
+  test_batchsize: 256
   sample_length: 600
 
 dataset:
@@ -29,8 +29,8 @@ dataset:
   dataset_split: train
   tokenizer_path: playground/bpe-tokenizer
   tokenizer_vocab_size: 8000
-  tokenizer_training_docs: 10000
-  target_tokens: 10000000
+  tokenizer_training_docs: 200000
+  target_tokens: 500000000
   train_ratio: 0.9
   val_ratio: 0.05
   test_ratio: 0.05
@@ -40,4 +40,4 @@ experiment:
   final: false
   tensorboard_dir: ./runs
   checkpoint_dir: ./lstm_checkpoints
-  save_every: 0
+  save_every: 1000

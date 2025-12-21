@@ -59,3 +59,32 @@ uv run python -m experiments.seqmodels.generate_lstm --config experiments/seqmod
 ```
 
 Use `--help` to see available options for any script.
+
+### Evaluation and Text Generation
+
+**Compare Model Performance**:
+```bash
+# Evaluate both models on the same test samples
+uv run python -m experiments.seqmodels.evaluate \
+    --transformer transformer_checkpoints/run_XXXXXXXX_XXXXXX/ \
+    --lstm lstm_checkpoints/run_XXXXXXXX_XXXXXX/ \
+    --batch-size 256 \
+    --num-batches 100 \
+    --transformer-checkpoint checkpoint_batch_6000.pt \
+    --lstm-checkpoint checkpoint_batch_6000.pt
+```
+
+**Generate Text from Checkpoint**:
+```bash
+# Generate with default settings
+uv run python -m experiments.seqmodels.generate_from_checkpoint \
+    transformer_checkpoints/run_XXXXXXXX_XXXXXX/
+
+# Custom prompt and parameters
+uv run python -m experiments.seqmodels.generate_from_checkpoint \
+    transformer_checkpoints/run_XXXXXXXX_XXXXXX/ \
+    --prompt "Once upon a time" \
+    --length 200 \
+    --temperature 0.9 \
+    --checkpoint checkpoint_batch_6000.pt
+```

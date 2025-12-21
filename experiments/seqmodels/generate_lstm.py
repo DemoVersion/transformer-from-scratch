@@ -19,13 +19,16 @@ from experiments.seqmodels.alternative_architectures.simplified_awd_lstm import 
 from experiments.seqmodels.config_schema import LSTMExperimentConfig
 from experiments.seqmodels.dataset_loader import (
     get_vocab_size,
-    prepare_tokenized_dataset,
+    load_tokenized_dataset,
 )
+from experiments.seqmodels.tokenizer import load_tokenizer
 from experiments.seqmodels.utils import (
     create_checkpoint_dir,
     sample_batch,
     sample_sequence,
     save_checkpoint,
+    write_test_header,
+    write_test_metrics,
 )
 from former import util
 from former.util import tic, toc
@@ -48,12 +51,32 @@ def train(config: LSTMExperimentConfig):
     checkpoint_dir = create_checkpoint_dir(config.experiment.checkpoint_dir)
     print(f"Checkpoint directory: {checkpoint_dir}")
 
-    # Train tokenizer from scratch and load the data
-    print("Training tokenizer from scratch and loading tokenized dataset...")
-    data_train, data_val, data_test, tokenizer = prepare_tokenized_dataset(
+    # Open log file for test outputs
+    test_log_path = checkpoint_dir / "test_outputs.txt"
+    test_log_file = open(test_log_path, "a")
+    test_log_file.write(f"Test outputs log - Started at {checkpoint_dir.name}\n")
+    print(f"Test outputs will be logged to: {test_log_path}")
+
+    # Check if tokenizer exists
+    tokenizer_path = Path(config.dataset.tokenizer_path)
+    tokenizer_file = tokenizer_path / "tokenizer.json"
+
+    if not tokenizer_file.exists():
+        raise FileNotFoundError(
+            f"Tokenizer not found at {tokenizer_path}\n"
+            f"Train it first: uv run python -m experiments.seqmodels.train_tokenizer --config <config>"
+        )
+
+    # Load the data using pre-trained tokenizer
+    print(f"Using pre-trained tokenizer from: {tokenizer_path}")
+    print("Loading tokenized dataset...")
+    data_train, data_val, data_test = load_tokenized_dataset(
         dataset_config=config.dataset,
         verbose=True,
     )
+
+    # Load tokenizer for sampling/generation
+    tokenizer = load_tokenizer(config.dataset.tokenizer_path)
 
     vocab_size = get_vocab_size(config.dataset.tokenizer_path)
     print(f"Vocabulary size: {vocab_size:,}")
@@ -155,6 +178,9 @@ def train(config: LSTMExperimentConfig):
             or i == config.training.num_batches - 1
         ):
             with torch.no_grad():
+                # Write test header to log file
+                write_test_header(test_log_file, i)
+
                 # Sample and print a random sequence
                 seedfr = random.randint(0, data_test.size(0) - config.model.context)
                 seed = data_test[seedfr : seedfr + config.model.context].to(torch.long)
@@ -169,24 +195,25 @@ def train(config: LSTMExperimentConfig):
                     max_context=config.model.context,
                     verbose=True,
                     length=config.evaluation.sample_length,
+                    log_file=test_log_file,
                 )
 
                 # Compute validation bits per byte
-                upto = (
-                    data_test.size(0)
-                    if i == config.training.num_batches - 1
-                    else config.evaluation.test_subset
-                )
-                data_sub = data_test[:upto]
+                data_sub = data_test[: config.evaluation.test_subset]
 
                 bits_per_byte = util.compute_compression(
                     model,
                     data_sub,
                     context=config.model.context,
                     batch_size=config.evaluation.test_batchsize,
+                    verbose=True,
                 )
 
                 print(f"epoch{i}: {bits_per_byte:.4} bits per byte")
+
+                # Write metrics to log file
+                write_test_metrics(test_log_file, i, bits_per_byte)
+
                 tbw.add_scalar(
                     "lstm/eval-loss",
                     bits_per_byte,
@@ -202,6 +229,10 @@ def train(config: LSTMExperimentConfig):
         tokenizer=tokenizer,
         is_final=True,
     )
+
+    # Close test log file
+    test_log_file.close()
+    print(f"Test outputs saved to: {test_log_path}")
 
     print("Training complete!")
 

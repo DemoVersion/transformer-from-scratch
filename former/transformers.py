@@ -12,7 +12,14 @@ class GTransformer(nn.Module):
     """
 
     def __init__(
-        self, emb, heads, depth, seq_length, num_tokens, attention_type="default"
+        self,
+        emb,
+        heads,
+        depth,
+        seq_length,
+        num_tokens,
+        attention_type="default",
+        dropout=0.0,
     ):
         super().__init__()
 
@@ -37,6 +44,7 @@ class GTransformer(nn.Module):
                     mask=True,
                     attention_type=attention_type,
                     pos_embedding=self.pos_embedding,
+                    dropout=dropout,
                 )
             )
 

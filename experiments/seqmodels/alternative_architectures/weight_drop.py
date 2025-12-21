@@ -40,4 +40,7 @@ class WeightDrop(nn.Module):
             self._setweights(name_w)
 
     def forward(self, *args, **kwargs):
+        # Set weights before forward pass (critical for checkpoint loading)
+        for name_w in self.weights:
+            self._setweights(name_w)
         return self.module.forward(*args, **kwargs)
